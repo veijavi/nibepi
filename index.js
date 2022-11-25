@@ -296,7 +296,7 @@ if(config.connection!==undefined && config.connection.series!==undefined) {
                   });
             });
         } else if(config.connection.enable=="nibegw") {
-            startNibeGW(port).then(result => {
+            startNibeGW(port,config.nibegw.listening_port,config.nibegw.read_request_port,config.nibegw.control_port).then(result => {
                 core = result;
                 
                 core.on('message', (m) => {

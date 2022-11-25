@@ -2,7 +2,9 @@ const dgram = require('dgram');
 var server = dgram.createSocket('udp4');
 
 var HOST = "127.0.0.1";
-var PORT = 9999;
+var LISTENING_PORT = 9999;
+var READ_REQUEST_PORT = 10000;
+var CONTROL_PORT = 10001;
 const sendQueue = [[192,107,6,115,176,1,0,0,0,111],[192,107,6,212,190,0,0,0,0,199]];
 const getQueue = [];
 var red = false;
@@ -13,6 +15,9 @@ process.on('message', (m) => {
     if(m.start===true) {
         if(m.port!==undefined) {
             HOST = m.port;
+			if(m.listening_port!==undefined) LISTENING_PORT = m.listening_port;
+			if(m.read_request_port!==undefined) READ_REQUEST_PORT = m.read_request_port;
+			if(m.control_port!==undefined) CONTROL_PORT = m.control_port;
             start()
         } else {
             if(process.connected===true) {
@@ -51,7 +56,7 @@ process.on('message', (m) => {
 function write(data) {
     data = Buffer.from(data)
 var client = dgram.createSocket('udp4');
-client.send(data, 0, data.length, 10001, HOST, function(err, bytes) {
+client.send(data, 0, data.length, CONTROL_PORT, HOST, function(err, bytes) {
   if (err) throw err;
   client.close();
 });
@@ -59,16 +64,17 @@ client.send(data, 0, data.length, 10001, HOST, function(err, bytes) {
 function read(data) {
     data = Buffer.from(data)
     var client = dgram.createSocket('udp4');
-    client.send(data, 0, data.length, 10000, HOST, function(err, bytes) {
+    client.send(data, 0, data.length, READ_REQUEST_PORT, HOST, function(err, bytes) {
       if (err) throw err;
       client.close();
     });
     }
 function start() {
-    server.bind(PORT, "0.0.0.0");
+    server.bind(LISTENING_PORT, "0.0.0.0");
     server.on('listening', function() {
         var address = server.address();
-       console.log('NibeGW client is listening on ' + HOST + ':' + address.port);
+       console.log('NibeGW client is listening on ' + "0.0.0.0" + ':' + address.port);
+	   console.log('NibeGW address:' + HOST + ', Read reguest port: ' +  READ_REQUEST_PORT + ' and Control port: ' +  CONTROL_PORT);
       });      
     server.on('message', function(message, remote) {
         makeResponse(Buffer.from(message)).then(result => {
